@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>貸款套利完整計算機｜單一年期版</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#667085;--line:#e5e7eb;--blue:#2563eb;--green:#15803d;--red:#b42318;--orange:#b7791f;--purple:#7c3aed;--shadow:0 14px 38px rgba(15,23,42,.08);--radius:18px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",Roboto,Arial,sans-serif;line-height:1.55}.wrap{max-width:1480px;margin:0 auto;padding:28px 18px 70px}header{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:18px}h1{font-size:30px;line-height:1.15;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}p{margin:0}.muted{color:var(--muted)}.pill{background:#eaf2ff;color:#174ea6;border:1px solid #cfe0ff;border-radius:999px;padding:9px 13px;font-weight:800;white-space:nowrap}.layout{display:grid;grid-template-columns:430px 1fr;gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}.inputs{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:13px;color:#344054;font-weight:750}input,select{width:100%;border:1px solid #d0d5dd;border-radius:12px;padding:10px 11px;font-size:15px;background:#fff;color:var(--text)}input:focus,select:focus{outline:2px solid rgba(37,99,235,.18);border-color:#93b4ff}.hint{font-size:12px;color:var(--muted);margin-top:8px}.small{font-size:12px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.kpi{border:1px solid var(--line);border-radius:16px;padding:14px;background:linear-gradient(180deg,#fff,#fbfcff)}.kpi .label{font-size:12px;color:var(--muted);font-weight:800}.kpi .value{font-size:23px;font-weight:900;margin-top:4px;letter-spacing:-.02em}.kpi .sub{font-size:12px;color:var(--muted);margin-top:2px}.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--orange)}.blue{color:var(--blue)}.purple{color:var(--purple)}.summary{font-size:15px;color:#344054}.summary b{color:#111827}.alert{border-radius:16px;padding:13px 14px;margin-top:12px;border:1px solid #fde68a;background:#fffbeb;color:#713f12}.alert.red{border-color:#fecaca;background:#fff1f2;color:#7f1d1d}.alert.green{border-color:#bbf7d0;background:#f0fdf4;color:#14532d}.resultBox{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.box{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}.box strong{font-size:13px;color:#475467}.box .big{font-size:24px;font-weight:900;margin:4px 0}.formula{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;overflow:auto}.formula b{color:#93c5fd}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.chartGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}canvas{width:100%;height:300px;border:1px solid var(--line);border-radius:16px;background:#fff}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;max-height:620px}table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{background:#f8fafc;color:#344054;font-size:12px;position:sticky;top:0;z-index:1}tr:last-child td{border-bottom:0}.rowBad td{background:#fff1f2}.rowPay td{background:#ecfdf3}.rowTail td{background:#f5f3ff}.rowMaturity td{background:#eff6ff}.miniRows{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.miniRows div{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fff}.miniRows strong{display:block;font-size:12px;color:#667085}.miniRows span{display:block;font-size:17px;font-weight:900;margin-top:2px}.footerNote{color:#667085;font-size:12px;margin-top:14px}.btnRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}button{border:1px solid #d0d5dd;background:#fff;border-radius:12px;padding:9px 12px;font-weight:800;cursor:pointer}button.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+@media(max-width:1100px){.layout,.grid2,.chartGrid{grid-template-columns:1fr}.kpis,.resultBox{grid-template-columns:1fr 1fr}header{display:block}.pill{display:inline-block;margin-top:12px}}@media(max-width:620px){.inputs,.kpis,.resultBox,.miniRows{grid-template-columns:1fr}h1{font-size:24px}}@media print{body{background:#fff}.wrap{max-width:none;padding:0}.card{box-shadow:none;break-inside:avoid}.layout,.grid2,.chartGrid{grid-template-columns:1fr}button{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>貸款套利完整計算機｜單一年期版</h1>
+    <p class="muted">輸入一組貸款與投資條件，只看該投資期數的完整金流、到期補配、清償後剩餘與核心利差。</p>
+  </div>
+  <div class="pill" id="topPill">等待計算</div>
+</header>
+
+<div class="layout">
+<aside class="card">
+  <h2>一、輸入條件</h2>
+  <div class="inputs">
+    <div class="field"><label>貸款金額 NTD</label><input id="loanAmount" type="number" value="850000"></div>
+    <div class="field"><label>貸款年利率 %</label><input id="loanRate" type="number" step="0.01" value="4.99"></div>
+    <div class="field"><label>貸款期數（月）</label><input id="loanMonths" type="number" value="84"></div>
+    <div class="field"><label>月付金模式</label><select id="paymentMode"><option value="auto" selected>自動用公式計算</option><option value="manual">手動輸入月付金</option></select></div>
+    <div class="field"><label>手動月付金 NTD</label><input id="manualPayment" type="number" value="12010"></div>
+    <div class="field"><label>撥款 / 投資開始日</label><input id="startDate" type="date" value="2025-05-01"></div>
+    <div class="field"><label>投資本金</label><input id="investmentAmount" type="number" value="20000"></div>
+    <div class="field"><label>投資幣別</label><select id="investmentCurrency"><option value="USD" selected>美金 USD</option><option value="NTD">台幣 NTD</option></select></div>
+    <div class="field"><label>匯率 NTD/USD</label><input id="fx" type="number" step="0.01" value="31"></div>
+    <div class="field"><label>自備補足預留資金 NTD</label><input id="extraReserveNtd" type="number" value="0"></div>
+    <div class="field"><label>固定收益年化 %</label><input id="yieldRate" type="number" step="0.01" value="12"></div>
+    <div class="field"><label>投資期數（月）</label><input id="investmentMonths" type="number" value="24"></div>
+    <div class="field"><label>預計清償月份</label><input id="payoffMonth" type="number" value="25"></div>
+    <div class="field"><label>提前清償違約金 NTD</label><input id="penaltyNtd" type="number" value="0"></div>
+    <div class="field"><label>配息日</label><input id="dividendDay" type="number" min="1" max="28" value="15"></div>
+    <div class="field"><label>利息計算天數</label><select id="dayCount"><option value="365" selected>365 天</option><option value="360">360 天</option></select></div>
+    <div class="field full"><label>固定配息月份</label><input id="dividendMonths" type="text" value="1,4,7,10"></div>
+    <div class="field"><label>到期補配日</label><select id="tailPayMode"><option value="next15" selected>到期隔月15日</option><option value="maturity">到期當日</option></select></div>
+    <div class="field"><label>到期本金是否清償貸款</label><select id="usePrincipalToPayoff"><option value="yes" selected>是</option><option value="no">否</option></select></div>
+  </div>
+  <div class="btnRow">
+    <button class="primary" onclick="calc()">重新計算</button>
+    <button onclick="window.print()">列印 / 存成 PDF</button>
+    <button onclick="resetDemo()">恢復範例值</button>
+  </div>
+  <p class="hint">預留資金自動計算：貸款金額 − 投資本金折台幣 + 自備補足預留資金。到期尾段利息會在到期隔月 15 日進入月度金流。</p>
+</aside>
+
+<main>
+  <section class="kpis">
+    <div class="kpi"><div class="label">每月本利攤</div><div class="value blue" id="monthlyPayment">—</div><div class="sub" id="paymentSub">—</div></div>
+    <div class="kpi"><div class="label">總預留還款資金</div><div class="value" id="reserveTotal">—</div><div class="sub" id="reserveSub">—</div></div>
+    <div class="kpi"><div class="label">清償時貸款餘額</div><div class="value" id="payoffBalance">—</div><div class="sub" id="payoffSub">—</div></div>
+    <div class="kpi"><div class="label">最大現金流缺口</div><div class="value" id="maxShortfall">—</div><div class="sub" id="firstShortfall">—</div></div>
+  </section>
+
+  <section class="card">
+    <h2>二、單一期數結果</h2>
+    <div class="resultBox">
+      <div class="box"><strong>核心利差</strong><div class="big" id="coreProfit">—</div><div class="muted small">投資利息 − 貸款利息 − 違約金</div></div>
+      <div class="box"><strong>清償後剩餘 / 需補</strong><div class="big" id="finalSurplus">—</div><div class="muted small">本金、配息、預留資金扣除清償餘額</div></div>
+      <div class="box"><strong>到期補發利息</strong><div class="big purple" id="tailInterest">—</div><div class="muted small" id="tailInterestSub">—</div></div>
+    </div>
+    <div class="miniRows">
+      <div><strong>總投資利息</strong><span id="totalInvestInterest">—</span></div>
+      <div><strong>期間貸款利息</strong><span id="totalLoanInterest">—</span></div>
+      <div><strong>投資本金檢查</strong><span id="fundingCheck">—</span></div>
+    </div>
+    <div id="summaryBox" class="alert"></div>
+  </section>
+</main>
+</div>
+
+<div class="grid2">
+  <section class="card">
+    <h2>三、計算規則</h2>
+    <div class="formula">
+      <b>自動預留還款資金</b> = 貸款金額 − 投資本金折台幣<br>
+      <b>總預留還款資金</b> = 自動預留還款資金 + 自備補足預留資金<br><br>
+      <b>月利率</b> r = 年利率 / 12<br>
+      <b>每月本利攤</b> M = P × r / [1 − (1+r)<sup>−N</sup>]<br>
+      <b>每月利息</b> = 上期貸款餘額 × r<br><br>
+      <b>固定季配息</b>：1/15 配 10–12 月；4/15 配 1–3 月；7/15 配 4–6 月；10/15 配 7–9 月。<br>
+      <b>到期補配</b>：專案到期後，尚未配到的尾段利息在到期隔月 15 日補發。<br><br>
+      <b>核心利差</b> = 投資利息收入 − 貸款利息成本 − 提前清償費用
+    </div>
+  </section>
+  <section class="card">
+    <h2>四、方案摘要</h2>
+    <div class="summary" id="summaryText">—</div>
+    <div id="cashAlert" class="alert"></div>
+  </section>
+</div>
+
+<section class="chartGrid">
+  <div class="card"><h2>圖一：貸款餘額下降圖</h2><canvas id="loanChart" width="900" height="320"></canvas></div>
+  <div class="card"><h2>圖二：可用現金水位圖</h2><canvas id="cashChart" width="900" height="320"></canvas></div>
+</section>
+<section class="chartGrid">
+  <div class="card"><h2>圖三：應計利息 vs 已入帳配息</h2><canvas id="interestChart" width="900" height="320"></canvas></div>
+  <div class="card"><h2>圖四：金額組成</h2><canvas id="barChart" width="900" height="320"></canvas></div>
+</section>
+
+<section class="card" style="margin-top:18px">
+  <h2>五、完整月度金流表</h2>
+  <div class="table-wrap"><table id="cashflowTable"></table></div>
+</section>
+
+<section class="card" style="margin-top:18px">
+  <h2>六、配息明細表</h2>
+  <div class="table-wrap"><table id="dividendTable"></table></div>
+</section>
+
+<p class="footerNote">提醒：此工具用於方案試算，實際結果會受銀行扣款日、計息日、提前清償規則、匯率、稅費與項目條款影響。</p>
+</div>
+
+<script>
+let lastResult=null;
+const $=id=>document.getElementById(id);
+const fmt0=n=>Math.round(Number(n)||0).toLocaleString('zh-TW');
+const fmtNtd=n=>'NT$'+fmt0(n);
+const fmtUsd=n=>'US$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPct=n=>(Number(n)||0).toFixed(2)+'%';
+function num(id){return Number($(id).value||0)} function str(id){return $(id).value}
+function toDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function addMonths(date,months){return new Date(date.getFullYear(),date.getMonth()+months,date.getDate())}
+function dateKey(d){return d.toISOString().slice(0,10)}
+function daysBetween(a,b){return Math.max(0,Math.round((b-a)/(1000*60*60*24)))}
+function clampMonth(n){return Math.max(1,Math.floor(Number(n)||1))}
+function monthlyPayment(P,annualRate,months){const r=annualRate/12;if(Math.abs(r)<1e-12)return P/months;return P*r/(1-Math.pow(1+r,-months))}
+function parseDividendMonths(){return Array.from(new Set(str('dividendMonths').split(',').map(x=>Number(x.trim())).filter(x=>x>=1&&x<=12))).sort((a,b)=>a-b)}
+function nextMonth15(date){return new Date(date.getFullYear(),date.getMonth()+1,Math.min(28,Math.max(1,Math.floor(num('dividendDay')||15))))}
+document.querySelectorAll('input,select').forEach(el=>{el.addEventListener('input',calc);el.addEventListener('change',calc)});
+
+function resetDemo(){
+  const vals={loanAmount:850000,loanRate:4.99,loanMonths:84,paymentMode:'auto',manualPayment:12010,startDate:'2025-05-01',investmentAmount:20000,investmentCurrency:'USD',fx:31,extraReserveNtd:0,yieldRate:12,investmentMonths:24,payoffMonth:25,penaltyNtd:0,dividendDay:15,dayCount:365,dividendMonths:'1,4,7,10',tailPayMode:'next15',usePrincipalToPayoff:'yes'};
+  Object.entries(vals).forEach(([k,v])=>$(k).value=v);calc();
+}
+
+function buildDividendEvents(start, investMonths, principalBase, yieldRate, dayBase, fx){
+  const end=addMonths(start,investMonths);
+  const divMonths=parseDividendMonths();
+  const divDay=Math.min(28,Math.max(1,Math.floor(num('dividendDay')||15)));
+  const daily=principalBase*yieldRate/dayBase;
+  let events=[];
+
+  // 固定季配息：每個配息日支付上一季的利息，但只計算投資期間內與該季重疊的天數。
+  for(let y=start.getFullYear(); y<=end.getFullYear()+1; y++){
+    for(const m of divMonths){
+      const payDate=new Date(y,m-1,divDay);
+      if(payDate<=start || payDate>end) continue; // 到期日前的正常配息
+      const qEnd=new Date(y,m-1,1);       // 例如 7/15 的 qEnd = 7/1，代表配 4/1~7/1
+      const qStart=new Date(y,m-4,1);
+      const periodStart=new Date(Math.max(start,qStart));
+      const periodEnd=new Date(Math.min(end,qEnd));
+      const days=daysBetween(periodStart,periodEnd);
+      if(days>0){
+        events.push({payDate,periodStart,periodEnd,days,amountBase:daily*days,amountNtd:daily*days*fx,type:'固定季配息'});
+      }
+    }
+  }
+
+  // 找出到期日前，最後一次已配到的利息截止日。
+  let coveredUntil=new Date(start);
+  events.forEach(ev=>{ if(ev.periodEnd>coveredUntil) coveredUntil=new Date(ev.periodEnd); });
+
+  // 到期尾段：從最後已配到的截止日，到專案到期日，在到期隔月15日補配。
+  if(coveredUntil<end){
+    const payDate=str('tailPayMode')==='maturity'?end:nextMonth15(end);
+    const days=daysBetween(coveredUntil,end);
+    events.push({payDate,periodStart:new Date(coveredUntil),periodEnd:end,days,amountBase:daily*days,amountNtd:daily*days*fx,type:'到期補配'});
+  }
+  events.sort((a,b)=>a.payDate-b.payDate);
+  return events;
+}
+
+function calc(){
+  const loanAmount=num('loanAmount'), annualRate=num('loanRate')/100, loanMonths=clampMonth(num('loanMonths'));
+  const autoPayment=monthlyPayment(loanAmount,annualRate,loanMonths);
+  const payment=str('paymentMode')==='auto'?autoPayment:num('manualPayment');
+  const startDate=toDate(str('startDate'));
+  const investmentAmount=num('investmentAmount'), fx=num('fx')||1;
+  const principalNtd=str('investmentCurrency')==='USD'?investmentAmount*fx:investmentAmount;
+  const principalBase=str('investmentCurrency')==='USD'?investmentAmount:investmentAmount/fx;
+  const autoReserveNtd=loanAmount-principalNtd;
+  const totalReserveNtd=autoReserveNtd+num('extraReserveNtd');
+  const yieldRate=num('yieldRate')/100, investMonths=clampMonth(num('investmentMonths'));
+  const payoffMonth=clampMonth(num('payoffMonth')), penaltyNtd=num('penaltyNtd');
+  const displayMonths=Math.max(payoffMonth, investMonths+2); // 確保到期隔月補配會出現在月度金流
+  const usePrincipal=str('usePrincipalToPayoff')==='yes';
+  const r=annualRate/12, dayBase=Number(str('dayCount'));
+  const dividends=buildDividendEvents(startDate,investMonths,principalBase,yieldRate,dayBase,fx);
+
+  const divByMonth=new Map();
+  dividends.forEach(ev=>{
+    const idx=Math.max(1,Math.ceil(daysBetween(startDate,ev.payDate)/30.4375));
+    const k=Math.min(displayMonths,idx);
+    if(!divByMonth.has(k))divByMonth.set(k,[]);
+    divByMonth.get(k).push(ev);
+  });
+
+  let balance=loanAmount,reserve=totalReserveNtd,interestCash=0,totalLoanInterest=0,maxShortfall=0,firstShortfallMonth=null;
+  let cumulativeAccrued=0,cumulativePaid=0,rows=[];
+  for(let i=1;i<=displayMonths;i++){
+    const monthStart=addMonths(startDate,i-1), monthEnd=addMonths(startDate,i);
+    const opening=balance;
+    let loanInterest=0,principalPay=0,actualPayment=0;
+    if(i<=payoffMonth && balance>0){
+      loanInterest=opening*r;
+      actualPayment=Math.min(payment,opening+loanInterest);
+      principalPay=Math.min(Math.max(0,actualPayment-loanInterest),opening);
+      balance=Math.max(0,opening-principalPay);
+      totalLoanInterest+=loanInterest;
+    }
+    const monthlyAccrual=principalNtd*yieldRate/dayBase*daysBetween(monthStart,monthEnd);
+    cumulativeAccrued+=monthlyAccrual;
+    const evs=divByMonth.get(i)||[];
+    const dividendIn=evs.reduce((s,e)=>s+e.amountNtd,0);
+    const tailDividendIn=evs.filter(e=>e.type==='到期補配').reduce((s,e)=>s+e.amountNtd,0);
+    cumulativePaid+=dividendIn;
+    interestCash+=dividendIn;
+
+    let need=actualPayment;
+    const fromReserve=Math.min(reserve,need); reserve-=fromReserve; need-=fromReserve;
+    const fromInterest=Math.min(interestCash,need); interestCash-=fromInterest; need-=fromInterest;
+    const shortfall=Math.max(0,need);
+    if(shortfall>0 && firstShortfallMonth===null)firstShortfallMonth=i;
+    maxShortfall=Math.max(maxShortfall,shortfall);
+
+    rows.push({month:i,date:dateKey(monthEnd),opening,loanInterest,principalPay,payment:actualPayment,ending:balance,monthlyAccrual,cumulativeAccrued,dividendIn,tailDividendIn,cumulativePaid,reserve,interestCash,availableCash:reserve+interestCash,shortfall,isDividend:dividendIn>0,isTail:tailDividendIn>0,isMaturity:i===investMonths,isPayoff:i===payoffMonth});
+  }
+
+  const payoffRow=rows[payoffMonth-1]||rows[rows.length-1];
+  const payoffBalance=payoffRow.ending;
+  const totalInvestmentInterestNtd=dividends.reduce((s,e)=>s+e.amountNtd,0);
+  const totalInvestmentInterestBase=dividends.reduce((s,e)=>s+e.amountBase,0);
+  const loanInterestToPayoff=rows.slice(0,payoffMonth).reduce((s,r)=>s+r.loanInterest,0);
+  const coreProfitNtd=totalInvestmentInterestNtd-loanInterestToPayoff-penaltyNtd;
+  const finalSurplusNtd=usePrincipal?(principalNtd+totalInvestmentInterestNtd+payoffRow.reserve-payoffBalance-penaltyNtd):(totalInvestmentInterestNtd+payoffRow.reserve+payoffRow.interestCash-penaltyNtd);
+  const tailEvents=dividends.filter(e=>e.type==='到期補配');
+  const tailNtd=tailEvents.reduce((s,e)=>s+e.amountNtd,0);
+  const tailUsd=tailEvents.reduce((s,e)=>s+e.amountBase,0);
+  const fundingGap=loanAmount-principalNtd;
+
+  lastResult={rows,dividends,loanAmount,annualRate,loanMonths,payment,startDate,principalNtd,principalBase,fx,totalReserveNtd,autoReserveNtd,yieldRate,investMonths,payoffMonth,penaltyNtd,payoffBalance,totalInvestmentInterestNtd,totalInvestmentInterestBase,loanInterestToPayoff,coreProfitNtd,finalSurplusNtd,tailNtd,tailUsd,maxShortfall,firstShortfallMonth,fundingGap,autoPayment};
+
+  renderNumbers();
+  renderCashflow(rows);
+  renderDividends(dividends);
+  drawAll();
+}
+
+function renderNumbers(){
+  const r=lastResult;
+  $('monthlyPayment').textContent=fmtNtd(r.payment);
+  $('paymentSub').textContent=str('paymentMode')==='auto'?'本利攤公式自動計算':'手動輸入';
+  $('reserveTotal').textContent=fmtNtd(r.totalReserveNtd);
+  $('reserveSub').textContent=`自動 ${fmtNtd(r.autoReserveNtd)} + 自備 ${fmtNtd(num('extraReserveNtd'))}`;
+  $('payoffBalance').textContent=fmtNtd(r.payoffBalance);
+  $('payoffSub').textContent=`第 ${r.payoffMonth} 個月清償`;
+  $('maxShortfall').textContent=fmtNtd(r.maxShortfall);
+  $('firstShortfall').textContent=r.firstShortfallMonth?`第 ${r.firstShortfallMonth} 個月首次缺口`:'期間未出現缺口';
+  setSigned('coreProfit',r.coreProfitNtd,` / ${fmtUsd(r.coreProfitNtd/r.fx)}`);
+  setSigned('finalSurplus',r.finalSurplusNtd,` / ${fmtUsd(r.finalSurplusNtd/r.fx)}`,true);
+  $('tailInterest').textContent=`${fmtNtd(r.tailNtd)} / ${fmtUsd(r.tailUsd)}`;
+  const tailEv=r.dividends.find(e=>e.type==='到期補配');
+  $('tailInterestSub').textContent=tailEv?`${dateKey(tailEv.payDate)} 入帳，計 ${tailEv.days} 天`:'無尾段補配';
+  $('totalInvestInterest').textContent=`${fmtNtd(r.totalInvestmentInterestNtd)} / ${fmtUsd(r.totalInvestmentInterestBase)}`;
+  $('totalLoanInterest').textContent=fmtNtd(r.loanInterestToPayoff);
+  const fundingEl=$('fundingCheck');
+  if(r.fundingGap>=0){fundingEl.textContent=`貸款內預留 ${fmtNtd(r.fundingGap)}`; fundingEl.className='good'}
+  else{fundingEl.textContent=`本金需自備 ${fmtNtd(Math.abs(r.fundingGap))}`; fundingEl.className='bad'}
+
+  $('topPill').textContent=`核心利差：${fmtNtd(r.coreProfitNtd)} / ${fmtUsd(r.coreProfitNtd/r.fx)}`;
+  $('summaryText').innerHTML=`
+    貸款 <b>${fmtNtd(r.loanAmount)}</b>，年利率 <b>${fmtPct(r.annualRate*100)}</b>，總期數 <b>${r.loanMonths}</b> 期；
+    每月本利攤約 <b>${fmtNtd(r.payment)}</b>。<br><br>
+    投資本金折台幣 <b>${fmtNtd(r.principalNtd)}</b>，貸款扣除投資本金後自動預留 <b>${fmtNtd(r.autoReserveNtd)}</b>，
+    加上自備補足 <b>${fmtNtd(num('extraReserveNtd'))}</b>，總預留還款資金為 <b>${fmtNtd(r.totalReserveNtd)}</b>。<br><br>
+    投資期數 <b>${r.investMonths}</b> 個月，固定收益年化 <b>${fmtPct(r.yieldRate*100)}</b>；
+    尾段未配息會在到期隔月 15 日補配，本次到期補配為 <b>${fmtNtd(r.tailNtd)}</b>。<br><br>
+    第 <b>${r.payoffMonth}</b> 個月清償時，貸款餘額約 <b>${fmtNtd(r.payoffBalance)}</b>；
+    期間貸款利息成本約 <b>${fmtNtd(r.loanInterestToPayoff)}</b>，總投資利息約 <b>${fmtNtd(r.totalInvestmentInterestNtd)}</b>，
+    核心利差約 <b>${fmtNtd(r.coreProfitNtd)}</b>。
+  `;
+  const summaryBox=$('summaryBox');
+  summaryBox.className=r.coreProfitNtd>=0?'alert green':'alert red';
+  summaryBox.innerHTML=`核心利差 = 投資利息 <b>${fmtNtd(r.totalInvestmentInterestNtd)}</b> − 貸款利息 <b>${fmtNtd(r.loanInterestToPayoff)}</b> − 違約金 <b>${fmtNtd(r.penaltyNtd)}</b> = <b>${fmtNtd(r.coreProfitNtd)}</b>。`;
+  const cashAlert=$('cashAlert');
+  if(r.maxShortfall>0){cashAlert.className='alert red';cashAlert.innerHTML=`現金流提醒：第 <b>${r.firstShortfallMonth}</b> 個月開始出現缺口，最大缺口 <b>${fmtNtd(r.maxShortfall)}</b>。`}
+  else{cashAlert.className='alert green';cashAlert.innerHTML=`現金流安全：依目前設定，月繳可由預留資金與已入帳配息覆蓋，沒有出現缺口。`}
+}
+function setSigned(id,n,tail='',surplusLabel=false){const el=$(id);el.textContent=(surplusLabel?(n>=0?'剩餘 ':'需補 '):'')+fmtNtd(Math.abs(n))+tail;el.className='big '+(n>=0?'good':'bad')}
+
+function renderCashflow(rows){
+  let html=`<thead><tr><th>月份</th><th>日期</th><th>期初貸款</th><th>本月利息</th><th>本月還本</th><th>月繳</th><th>期末貸款</th><th>本月應計利息</th><th>本月實際配息</th><th>其中到期補配</th><th>累積已入帳配息</th><th>預留資金餘額</th><th>配息可用餘額</th><th>期末可用現金</th><th>缺口</th></tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const cls=r.shortfall>0?'rowBad':r.isTail?'rowTail':r.isPayoff?'rowMaturity':r.isDividend?'rowPay':'';
+    html+=`<tr class="${cls}"><td>第 ${r.month} 月</td><td>${r.date}</td><td>${fmt0(r.opening)}</td><td>${fmt0(r.loanInterest)}</td><td>${fmt0(r.principalPay)}</td><td>${fmt0(r.payment)}</td><td>${fmt0(r.ending)}</td><td>${fmt0(r.monthlyAccrual)}</td><td>${fmt0(r.dividendIn)}</td><td>${fmt0(r.tailDividendIn)}</td><td>${fmt0(r.cumulativePaid)}</td><td>${fmt0(r.reserve)}</td><td>${fmt0(r.interestCash)}</td><td>${fmt0(r.availableCash)}</td><td>${fmt0(r.shortfall)}</td></tr>`;
+  });
+  html+='</tbody>';$('cashflowTable').innerHTML=html;
+}
+function renderDividends(events){
+  let cum=0;let html=`<thead><tr><th>類型</th><th>入帳日</th><th>計息起日</th><th>計息迄日</th><th>天數</th><th>配息 USD</th><th>折合台幣</th><th>累積台幣</th></tr></thead><tbody>`;
+  events.forEach(ev=>{cum+=ev.amountNtd;html+=`<tr class="${ev.type==='到期補配'?'rowTail':'rowPay'}"><td>${ev.type}</td><td>${dateKey(ev.payDate)}</td><td>${dateKey(ev.periodStart)}</td><td>${dateKey(ev.periodEnd)}</td><td>${ev.days}</td><td>${fmtUsd(ev.amountBase)}</td><td>${fmt0(ev.amountNtd)}</td><td>${fmt0(cum)}</td></tr>`});
+  html+='</tbody>';$('dividendTable').innerHTML=html;
+}
+function drawAll(){
+  const r=lastResult, rows=r.rows;
+  drawLineChart('loanChart',[{name:'貸款餘額',arr:rows.map(x=>x.ending),color:'#2563eb'}]);
+  drawLineChart('cashChart',[{name:'可用現金',arr:rows.map(x=>x.availableCash),color:'#15803d'},{name:'缺口',arr:rows.map(x=>x.shortfall),color:'#b42318'}]);
+  drawLineChart('interestChart',[{name:'帳上應計利息',arr:rows.map(x=>x.cumulativeAccrued),color:'#7c3aed'},{name:'已入帳配息',arr:rows.map(x=>x.cumulativePaid),color:'#15803d'}]);
+  drawBarChart('barChart',[{name:'投資利息',val:r.totalInvestmentInterestNtd},{name:'貸款利息',val:-r.loanInterestToPayoff},{name:'核心利差',val:r.coreProfitNtd},{name:'清償後剩餘',val:r.finalSurplusNtd}]);
+}
+function drawLineChart(canvasId,series){
+  const c=$(canvasId),ctx=c.getContext('2d'),w=c.width,h=c.height,pad=54;ctx.clearRect(0,0,w,h);
+  const all=series.flatMap(s=>s.arr).concat([0]);const min=Math.min(...all),max=Math.max(...all);
+  const x=i=>pad+i*((w-pad*2)/Math.max(1,series[0].arr.length-1));const y=v=>h-pad-(v-min)*((h-pad*2)/(max-min||1));
+  ctx.strokeStyle='#e5e7eb';ctx.lineWidth=1;for(let i=0;i<=4;i++){const yy=pad+i*(h-pad*2)/4;ctx.beginPath();ctx.moveTo(pad,yy);ctx.lineTo(w-pad,yy);ctx.stroke()}
+  ctx.fillStyle='#667085';ctx.font='12px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif';ctx.fillText(fmtNtd(max),8,pad+4);ctx.fillText(fmtNtd(min),8,h-pad+4);
+  series.forEach((s,idx)=>{ctx.strokeStyle=s.color;ctx.lineWidth=3;ctx.beginPath();s.arr.forEach((v,i)=>i===0?ctx.moveTo(x(i),y(v)):ctx.lineTo(x(i),y(v)));ctx.stroke();ctx.fillStyle=s.color;ctx.fillRect(w-190,22+idx*22,12,12);ctx.fillStyle='#344054';ctx.fillText(s.name,w-172,33+idx*22)})
+}
+function drawBarChart(canvasId,bars){
+  const c=$(canvasId),ctx=c.getContext('2d'),w=c.width,h=c.height,pad=60;ctx.clearRect(0,0,w,h);
+  const maxAbs=Math.max(1,...bars.map(b=>Math.abs(b.val)));const zeroY=h/2;ctx.strokeStyle='#e5e7eb';ctx.beginPath();ctx.moveTo(pad,zeroY);ctx.lineTo(w-pad,zeroY);ctx.stroke();
+  const barW=(w-pad*2)/bars.length*.5;bars.forEach((b,i)=>{const cx=pad+(i+.5)*((w-pad*2)/bars.length);const bh=Math.abs(b.val)/maxAbs*(h-pad*2)/2;const y=b.val>=0?zeroY-bh:zeroY;ctx.fillStyle=b.val>=0?'#15803d':'#b42318';ctx.fillRect(cx-barW/2,y,barW,bh);ctx.fillStyle='#344054';ctx.font='13px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif';ctx.textAlign='center';ctx.fillText(b.name,cx,h-28);ctx.fillText(fmtNtd(b.val),cx,b.val>=0?y-8:y+bh+18);ctx.textAlign='left'})
+}
+calc();
+</script>
+</body>
+</html>
