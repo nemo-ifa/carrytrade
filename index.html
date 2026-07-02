@@ -57,7 +57,7 @@
     <div class="kpi"><div class="label">每月本利攤</div><div class="value blue" id="monthlyPayment">—</div><div class="sub" id="paymentSub">—</div></div>
     <div class="kpi"><div class="label">總預留還款資金</div><div class="value" id="reserveTotal">—</div><div class="sub" id="reserveSub">—</div></div>
     <div class="kpi"><div class="label">清償時貸款餘額</div><div class="value" id="payoffBalance">—</div><div class="sub" id="payoffSub">—</div></div>
-    <div class="kpi"><div class="label">最大現金流缺口</div><div class="value" id="maxShortfall">—</div><div class="sub" id="firstShortfall">—</div></div>
+    <div class="kpi"><div class="label">累積月繳缺口</div><div class="value" id="maxShortfall">—</div><div class="sub" id="firstShortfall">—</div></div>
   </section>
 
   <section class="card">
@@ -205,7 +205,8 @@ function calc(){
     divByMonth.get(k).push(ev);
   });
 
-  let balance=loanAmount,reserve=totalReserveNtd,interestCash=0,totalLoanInterest=0,maxShortfall=0,firstShortfallMonth=null;
+  let balance=loanAmount,reserve=Math.max(0,totalReserveNtd),interestCash=0,totalLoanInterest=0,maxMonthlyShortfall=0,cumulativeShortfall=0,firstShortfallMonth=null;
+  const initialFundingShortfall=Math.max(0,-totalReserveNtd); // 投資本金超過貸款與自備預留時，不讓預留資金變成負數
   let cumulativeAccrued=0,cumulativePaid=0,rows=[];
   for(let i=1;i<=displayMonths;i++){
     const monthStart=addMonths(startDate,i-1), monthEnd=addMonths(startDate,i);
@@ -227,28 +228,37 @@ function calc(){
     interestCash+=dividendIn;
 
     let need=actualPayment;
-    const fromReserve=Math.min(reserve,need); reserve-=fromReserve; need-=fromReserve;
-    const fromInterest=Math.min(interestCash,need); interestCash-=fromInterest; need-=fromInterest;
-    const shortfall=Math.max(0,need);
+    const fromReserve=Math.min(Math.max(0,reserve),need); reserve-=fromReserve; need-=fromReserve;
+    const fromInterest=Math.min(Math.max(0,interestCash),need); interestCash-=fromInterest; need-=fromInterest;
+    const shortfall=Math.max(0,need); // 本月實際需要額外補的月繳
     if(shortfall>0 && firstShortfallMonth===null)firstShortfallMonth=i;
-    maxShortfall=Math.max(maxShortfall,shortfall);
+    cumulativeShortfall+=shortfall; // 缺口必須累積，不能每月歸零
+    maxMonthlyShortfall=Math.max(maxMonthlyShortfall,shortfall);
+    const availableCash=reserve+interestCash;
+    const netAvailableCash=availableCash-cumulativeShortfall; // 用來呈現未補資金時的真實淨水位，可為負數
 
-    rows.push({month:i,date:dateKey(monthEnd),opening,loanInterest,principalPay,payment:actualPayment,ending:balance,monthlyAccrual,cumulativeAccrued,dividendIn,tailDividendIn,cumulativePaid,reserve,interestCash,availableCash:reserve+interestCash,shortfall,isDividend:dividendIn>0,isTail:tailDividendIn>0,isMaturity:i===investMonths,isPayoff:i===payoffMonth});
+    rows.push({month:i,date:dateKey(monthEnd),opening,loanInterest,principalPay,payment:actualPayment,ending:balance,monthlyAccrual,cumulativeAccrued,dividendIn,tailDividendIn,cumulativePaid,reserve,interestCash,availableCash,netAvailableCash,shortfall,cumulativeShortfall,isDividend:dividendIn>0,isTail:tailDividendIn>0,isMaturity:i===investMonths,isPayoff:i===payoffMonth});
   }
 
   const payoffRow=rows[payoffMonth-1]||rows[rows.length-1];
+  const finalRow=rows[rows.length-1];
   const payoffBalance=payoffRow.ending;
   const totalInvestmentInterestNtd=dividends.reduce((s,e)=>s+e.amountNtd,0);
   const totalInvestmentInterestBase=dividends.reduce((s,e)=>s+e.amountBase,0);
   const loanInterestToPayoff=rows.slice(0,payoffMonth).reduce((s,r)=>s+r.loanInterest,0);
   const coreProfitNtd=totalInvestmentInterestNtd-loanInterestToPayoff-penaltyNtd;
-  const finalSurplusNtd=usePrincipal?(principalNtd+totalInvestmentInterestNtd+payoffRow.reserve-payoffBalance-penaltyNtd):(totalInvestmentInterestNtd+payoffRow.reserve+payoffRow.interestCash-penaltyNtd);
+  // 清償後剩餘改用「實際還沒被拿去繳款的現金」計算，避免把已經拿去繳月付金的配息重複算一次。
+  const cashAvailableForSettlement=(usePrincipal?principalNtd:0)+finalRow.reserve+finalRow.interestCash;
+  const settlementSurplusNtd=usePrincipal?(cashAvailableForSettlement-payoffBalance-penaltyNtd):(finalRow.reserve+finalRow.interestCash-penaltyNtd);
+  const finalSurplusNtd=settlementSurplusNtd-cumulativeShortfall-initialFundingShortfall;
+  const payoffShortfallNtd=Math.max(0,-settlementSurplusNtd);
+  const totalNeedToCompleteNtd=initialFundingShortfall+cumulativeShortfall+payoffShortfallNtd;
   const tailEvents=dividends.filter(e=>e.type==='到期補配');
   const tailNtd=tailEvents.reduce((s,e)=>s+e.amountNtd,0);
   const tailUsd=tailEvents.reduce((s,e)=>s+e.amountBase,0);
   const fundingGap=loanAmount-principalNtd;
 
-  lastResult={rows,dividends,loanAmount,annualRate,loanMonths,payment,startDate,principalNtd,principalBase,fx,totalReserveNtd,autoReserveNtd,yieldRate,investMonths,payoffMonth,penaltyNtd,payoffBalance,totalInvestmentInterestNtd,totalInvestmentInterestBase,loanInterestToPayoff,coreProfitNtd,finalSurplusNtd,tailNtd,tailUsd,maxShortfall,firstShortfallMonth,fundingGap,autoPayment};
+  lastResult={rows,dividends,loanAmount,annualRate,loanMonths,payment,startDate,principalNtd,principalBase,fx,totalReserveNtd,autoReserveNtd,yieldRate,investMonths,payoffMonth,penaltyNtd,payoffBalance,totalInvestmentInterestNtd,totalInvestmentInterestBase,loanInterestToPayoff,coreProfitNtd,finalSurplusNtd,settlementSurplusNtd,cumulativeShortfall,maxMonthlyShortfall,initialFundingShortfall,payoffShortfallNtd,totalNeedToCompleteNtd,tailNtd,tailUsd,maxShortfall:cumulativeShortfall,firstShortfallMonth,fundingGap,autoPayment};
 
   renderNumbers();
   renderCashflow(rows);
@@ -264,8 +274,8 @@ function renderNumbers(){
   $('reserveSub').textContent=`自動 ${fmtNtd(r.autoReserveNtd)} + 自備 ${fmtNtd(num('extraReserveNtd'))}`;
   $('payoffBalance').textContent=fmtNtd(r.payoffBalance);
   $('payoffSub').textContent=`第 ${r.payoffMonth} 個月清償`;
-  $('maxShortfall').textContent=fmtNtd(r.maxShortfall);
-  $('firstShortfall').textContent=r.firstShortfallMonth?`第 ${r.firstShortfallMonth} 個月首次缺口`:'期間未出現缺口';
+  $('maxShortfall').textContent=fmtNtd(r.cumulativeShortfall);
+  $('firstShortfall').textContent=r.firstShortfallMonth?`第 ${r.firstShortfallMonth} 個月首次缺口；最大單月 ${fmtNtd(r.maxMonthlyShortfall)}`:'期間未出現缺口';
   setSigned('coreProfit',r.coreProfitNtd,` / ${fmtUsd(r.coreProfitNtd/r.fx)}`);
   setSigned('finalSurplus',r.finalSurplusNtd,` / ${fmtUsd(r.finalSurplusNtd/r.fx)}`,true);
   $('tailInterest').textContent=`${fmtNtd(r.tailNtd)} / ${fmtUsd(r.tailUsd)}`;
@@ -287,22 +297,27 @@ function renderNumbers(){
     尾段未配息會在到期隔月 15 日補配，本次到期補配為 <b>${fmtNtd(r.tailNtd)}</b>。<br><br>
     第 <b>${r.payoffMonth}</b> 個月清償時，貸款餘額約 <b>${fmtNtd(r.payoffBalance)}</b>；
     期間貸款利息成本約 <b>${fmtNtd(r.loanInterestToPayoff)}</b>，總投資利息約 <b>${fmtNtd(r.totalInvestmentInterestNtd)}</b>，
-    核心利差約 <b>${fmtNtd(r.coreProfitNtd)}</b>。
+    核心利差約 <b>${fmtNtd(r.coreProfitNtd)}</b>。<br><br>
+    月繳若未被預留資金與已入帳配息覆蓋，缺口會累積；本次累積月繳缺口為 <b>${fmtNtd(r.cumulativeShortfall)}</b>，
+    起始本金/預留不足為 <b>${fmtNtd(r.initialFundingShortfall)}</b>，總需補資金為 <b>${fmtNtd(r.totalNeedToCompleteNtd)}</b>。
   `;
   const summaryBox=$('summaryBox');
   summaryBox.className=r.coreProfitNtd>=0?'alert green':'alert red';
   summaryBox.innerHTML=`核心利差 = 投資利息 <b>${fmtNtd(r.totalInvestmentInterestNtd)}</b> − 貸款利息 <b>${fmtNtd(r.loanInterestToPayoff)}</b> − 違約金 <b>${fmtNtd(r.penaltyNtd)}</b> = <b>${fmtNtd(r.coreProfitNtd)}</b>。`;
   const cashAlert=$('cashAlert');
-  if(r.maxShortfall>0){cashAlert.className='alert red';cashAlert.innerHTML=`現金流提醒：第 <b>${r.firstShortfallMonth}</b> 個月開始出現缺口，最大缺口 <b>${fmtNtd(r.maxShortfall)}</b>。`}
+  if(r.cumulativeShortfall>0||r.initialFundingShortfall>0||r.payoffShortfallNtd>0){
+    cashAlert.className='alert red';
+    cashAlert.innerHTML=`現金流提醒：累積月繳缺口 <b>${fmtNtd(r.cumulativeShortfall)}</b>，起始本金/預留不足 <b>${fmtNtd(r.initialFundingShortfall)}</b>，清償缺口 <b>${fmtNtd(r.payoffShortfallNtd)}</b>，總需補資金 <b>${fmtNtd(r.totalNeedToCompleteNtd)}</b>。`;
+  }
   else{cashAlert.className='alert green';cashAlert.innerHTML=`現金流安全：依目前設定，月繳可由預留資金與已入帳配息覆蓋，沒有出現缺口。`}
 }
 function setSigned(id,n,tail='',surplusLabel=false){const el=$(id);el.textContent=(surplusLabel?(n>=0?'剩餘 ':'需補 '):'')+fmtNtd(Math.abs(n))+tail;el.className='big '+(n>=0?'good':'bad')}
 
 function renderCashflow(rows){
-  let html=`<thead><tr><th>月份</th><th>日期</th><th>期初貸款</th><th>本月利息</th><th>本月還本</th><th>月繳</th><th>期末貸款</th><th>本月應計利息</th><th>本月實際配息</th><th>其中到期補配</th><th>累積已入帳配息</th><th>預留資金餘額</th><th>配息可用餘額</th><th>期末可用現金</th><th>缺口</th></tr></thead><tbody>`;
+  let html=`<thead><tr><th>月份</th><th>日期</th><th>期初貸款</th><th>本月利息</th><th>本月還本</th><th>月繳</th><th>期末貸款</th><th>本月應計利息</th><th>本月實際配息</th><th>其中到期補配</th><th>累積已入帳配息</th><th>預留資金餘額</th><th>配息可用餘額</th><th>期末可用現金</th><th>扣缺口後淨水位</th><th>本月缺口</th><th>累積缺口</th></tr></thead><tbody>`;
   rows.forEach(r=>{
     const cls=r.shortfall>0?'rowBad':r.isTail?'rowTail':r.isPayoff?'rowMaturity':r.isDividend?'rowPay':'';
-    html+=`<tr class="${cls}"><td>第 ${r.month} 月</td><td>${r.date}</td><td>${fmt0(r.opening)}</td><td>${fmt0(r.loanInterest)}</td><td>${fmt0(r.principalPay)}</td><td>${fmt0(r.payment)}</td><td>${fmt0(r.ending)}</td><td>${fmt0(r.monthlyAccrual)}</td><td>${fmt0(r.dividendIn)}</td><td>${fmt0(r.tailDividendIn)}</td><td>${fmt0(r.cumulativePaid)}</td><td>${fmt0(r.reserve)}</td><td>${fmt0(r.interestCash)}</td><td>${fmt0(r.availableCash)}</td><td>${fmt0(r.shortfall)}</td></tr>`;
+    html+=`<tr class="${cls}"><td>第 ${r.month} 月</td><td>${r.date}</td><td>${fmt0(r.opening)}</td><td>${fmt0(r.loanInterest)}</td><td>${fmt0(r.principalPay)}</td><td>${fmt0(r.payment)}</td><td>${fmt0(r.ending)}</td><td>${fmt0(r.monthlyAccrual)}</td><td>${fmt0(r.dividendIn)}</td><td>${fmt0(r.tailDividendIn)}</td><td>${fmt0(r.cumulativePaid)}</td><td>${fmt0(r.reserve)}</td><td>${fmt0(r.interestCash)}</td><td>${fmt0(r.availableCash)}</td><td>${fmt0(r.netAvailableCash)}</td><td>${fmt0(r.shortfall)}</td><td>${fmt0(r.cumulativeShortfall)}</td></tr>`;
   });
   html+='</tbody>';$('cashflowTable').innerHTML=html;
 }
@@ -314,7 +329,7 @@ function renderDividends(events){
 function drawAll(){
   const r=lastResult, rows=r.rows;
   drawLineChart('loanChart',[{name:'貸款餘額',arr:rows.map(x=>x.ending),color:'#2563eb'}]);
-  drawLineChart('cashChart',[{name:'可用現金',arr:rows.map(x=>x.availableCash),color:'#15803d'},{name:'缺口',arr:rows.map(x=>x.shortfall),color:'#b42318'}]);
+  drawLineChart('cashChart',[{name:'可用現金',arr:rows.map(x=>x.availableCash),color:'#15803d'},{name:'扣缺口後淨水位',arr:rows.map(x=>x.netAvailableCash),color:'#7c3aed'},{name:'累積缺口',arr:rows.map(x=>x.cumulativeShortfall),color:'#b42318'}]);
   drawLineChart('interestChart',[{name:'帳上應計利息',arr:rows.map(x=>x.cumulativeAccrued),color:'#7c3aed'},{name:'已入帳配息',arr:rows.map(x=>x.cumulativePaid),color:'#15803d'}]);
   drawBarChart('barChart',[{name:'投資利息',val:r.totalInvestmentInterestNtd},{name:'貸款利息',val:-r.loanInterestToPayoff},{name:'核心利差',val:r.coreProfitNtd},{name:'清償後剩餘',val:r.finalSurplusNtd}]);
 }
