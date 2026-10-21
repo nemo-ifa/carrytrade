@@ -120,8 +120,10 @@
 <p class="footerNote">提醒：此工具用於方案試算，實際結果會受銀行扣款日、計息日、提前清償規則、匯率、稅費與項目條款影響。</p>
 </div>
 
+<script src="calendar.js"></script>
 <script>
 let lastResult=null;
+const {addMonths,dateKey,daysBetween,overlapDays}=CarrytradeCalendar;
 const $=id=>document.getElementById(id);
 const fmt0=n=>Math.round(Number(n)||0).toLocaleString('zh-TW');
 const fmtNtd=n=>'NT$'+fmt0(n);
@@ -129,9 +131,6 @@ const fmtUsd=n=>'US$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigi
 const fmtPct=n=>(Number(n)||0).toFixed(2)+'%';
 function num(id){return Number($(id).value||0)} function str(id){return $(id).value}
 function toDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
-function addMonths(date,months){return new Date(date.getFullYear(),date.getMonth()+months,date.getDate())}
-function dateKey(d){return d.toISOString().slice(0,10)}
-function daysBetween(a,b){return Math.max(0,Math.round((b-a)/(1000*60*60*24)))}
 function clampMonth(n){return Math.max(1,Math.floor(Number(n)||1))}
 function monthlyPayment(P,annualRate,months){const r=annualRate/12;if(Math.abs(r)<1e-12)return P/months;return P*r/(1-Math.pow(1+r,-months))}
 function parseDividendMonths(){return Array.from(new Set(str('dividendMonths').split(',').map(x=>Number(x.trim())).filter(x=>x>=1&&x<=12))).sort((a,b)=>a-b)}
@@ -191,6 +190,7 @@ function calc(){
   const autoReserveNtd=loanAmount-principalNtd;
   const totalReserveNtd=autoReserveNtd+num('extraReserveNtd');
   const yieldRate=num('yieldRate')/100, investMonths=clampMonth(num('investmentMonths'));
+  const investmentEndDate=addMonths(startDate,investMonths);
   const payoffMonth=clampMonth(num('payoffMonth')), penaltyNtd=num('penaltyNtd');
   const displayMonths=Math.max(payoffMonth, investMonths+2); // 確保到期隔月補配會出現在月度金流
   const usePrincipal=str('usePrincipalToPayoff')==='yes';
@@ -219,7 +219,7 @@ function calc(){
       balance=Math.max(0,opening-principalPay);
       totalLoanInterest+=loanInterest;
     }
-    const monthlyAccrual=principalNtd*yieldRate/dayBase*daysBetween(monthStart,monthEnd);
+    const monthlyAccrual=principalNtd*yieldRate/dayBase*overlapDays(monthStart,monthEnd,startDate,investmentEndDate);
     cumulativeAccrued+=monthlyAccrual;
     const evs=divByMonth.get(i)||[];
     const dividendIn=evs.reduce((s,e)=>s+e.amountNtd,0);
@@ -294,7 +294,7 @@ function renderNumbers(){
     投資本金折台幣 <b>${fmtNtd(r.principalNtd)}</b>，貸款扣除投資本金後自動預留 <b>${fmtNtd(r.autoReserveNtd)}</b>，
     加上自備補足 <b>${fmtNtd(num('extraReserveNtd'))}</b>，總預留還款資金為 <b>${fmtNtd(r.totalReserveNtd)}</b>。<br><br>
     投資期數 <b>${r.investMonths}</b> 個月，固定收益年化 <b>${fmtPct(r.yieldRate*100)}</b>；
-    尾段未配息會在到期隔月 15 日補配，本次到期補配為 <b>${fmtNtd(r.tailNtd)}</b>。<br><br>
+    尾段未配息會在${str('tailPayMode')==='maturity'?'到期當日':'到期隔月的指定配息日'}補配，本次到期補配為 <b>${fmtNtd(r.tailNtd)}</b>。<br><br>
     第 <b>${r.payoffMonth}</b> 個月清償時，貸款餘額約 <b>${fmtNtd(r.payoffBalance)}</b>；
     期間貸款利息成本約 <b>${fmtNtd(r.loanInterestToPayoff)}</b>，總投資利息約 <b>${fmtNtd(r.totalInvestmentInterestNtd)}</b>，
     核心利差約 <b>${fmtNtd(r.coreProfitNtd)}</b>。<br><br>
